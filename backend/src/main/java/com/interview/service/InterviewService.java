@@ -1,9 +1,13 @@
 package com.interview.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.interview.dto.EndInterviewResponse;
+import com.interview.dto.HistoryItemResponse;
+import com.interview.dto.InterviewDetailResponse;
 import com.interview.dto.InterviewerResponse;
+import com.interview.dto.PageResponse;
 import com.interview.dto.ReportResponse;
 import com.interview.dto.StartInterviewRequest;
 import com.interview.dto.StartInterviewResponse;
@@ -27,6 +31,7 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -418,5 +423,86 @@ public class InterviewService {
             case "comprehensive" -> "综合面试";
             default -> type;
         };
+    }
+
+    public PageResponse<HistoryItemResponse> getHistory(int page, int size) {
+        Page<Interview> pageParam = new Page<>(page, size);
+        QueryWrapper<Interview> wrapper = new QueryWrapper<Interview>()
+                .eq("user_id", 1L)
+                .eq("status", "completed")
+                .orderByDesc("create_time");
+
+        Page<Interview> result = interviewMapper.selectPage(pageParam, wrapper);
+
+        List<HistoryItemResponse> list = result.getRecords().stream()
+                .map(i -> new HistoryItemResponse(
+                        i.getId(),
+                        i.getDirection(),
+                        i.getDifficulty(),
+                        i.getInterviewType(),
+                        i.getTotalScore(),
+                        i.getQuestionCount(),
+                        i.getDurationSeconds(),
+                        i.getCreateTime()))
+                .collect(Collectors.toList());
+
+        return new PageResponse<>(list, result.getTotal(), page, size);
+    }
+
+    public InterviewDetailResponse getInterviewDetail(Long interviewId) {
+        Interview interview = interviewMapper.selectById(interviewId);
+        if (interview == null) {
+            throw new IllegalArgumentException("面试不存在");
+        }
+
+        List<Message> messages = messageMapper.selectList(
+                new QueryWrapper<Message>()
+                        .eq("interview_id", interviewId)
+                        .orderByAsc("create_time"));
+
+        List<InterviewDetailResponse.MessageItem> messageItems = messages.stream()
+                .map(m -> new InterviewDetailResponse.MessageItem(
+                        m.getRole(),
+                        m.getContent(),
+                        m.getTopic(),
+                        m.getScore(),
+                        m.getCreateTime()))
+                .collect(Collectors.toList());
+
+        InterviewReport report = interviewReportMapper.selectOne(
+                new QueryWrapper<InterviewReport>().eq("interview_id", interviewId));
+
+        InterviewDetailResponse.ReportInfo reportInfo = null;
+        if (report != null) {
+            List<TopicScore> topicScores = topicScoreMapper.selectList(
+                    new QueryWrapper<TopicScore>().eq("report_id", report.getId()));
+
+            List<InterviewDetailResponse.TopicScoreItem> topicItems = topicScores.stream()
+                    .map(t -> new InterviewDetailResponse.TopicScoreItem(
+                            t.getTopic(),
+                            t.getScore(),
+                            t.getComment(),
+                            t.getIsWeak() != null && t.getIsWeak() == 1))
+                    .collect(Collectors.toList());
+
+            reportInfo = new InterviewDetailResponse.ReportInfo(
+                    report.getId(),
+                    report.getOverallScore(),
+                    report.getSummary(),
+                    report.getImprovement(),
+                    topicItems);
+        }
+
+        return new InterviewDetailResponse(
+                interview.getId(),
+                interview.getDirection(),
+                interview.getDifficulty(),
+                interview.getInterviewType(),
+                interview.getTotalScore(),
+                interview.getQuestionCount(),
+                interview.getDurationSeconds(),
+                interview.getCreateTime(),
+                messageItems,
+                reportInfo);
     }
 }

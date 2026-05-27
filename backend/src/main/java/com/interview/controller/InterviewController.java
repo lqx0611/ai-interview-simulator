@@ -1,10 +1,7 @@
 package com.interview.controller;
 
 import com.interview.common.Result;
-import com.interview.dto.AnswerRequest;
-import com.interview.dto.EndInterviewResponse;
-import com.interview.dto.StartInterviewRequest;
-import com.interview.dto.StartInterviewResponse;
+import com.interview.dto.*;
 import com.interview.service.InterviewService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +31,22 @@ public class InterviewController {
     @PostMapping("/api/interview/{id}/end")
     public Result<EndInterviewResponse> endInterview(@PathVariable Long id) {
         EndInterviewResponse response = interviewService.endInterview(id);
+        return Result.success(response);
+    }
+
+    @GetMapping("/api/interview/history")
+    public Result<PageResponse<HistoryItemResponse>> history(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        if (page < 1) page = 1;
+        if (size < 1 || size > 50) size = 10;
+        PageResponse<HistoryItemResponse> response = interviewService.getHistory(page, size);
+        return Result.success(response);
+    }
+
+    @GetMapping("/api/interview/{id}/detail")
+    public Result<InterviewDetailResponse> detail(@PathVariable Long id) {
+        InterviewDetailResponse response = interviewService.getInterviewDetail(id);
         return Result.success(response);
     }
 }

@@ -4,6 +4,7 @@ import Setup from './pages/Setup';
 import Interview from './pages/Interview';
 import Report from './pages/Report';
 import History from './pages/History';
+import HistoryDetail from './pages/HistoryDetail';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
         <Route path="/interview/:id" element={<Interview />} />
         <Route path="/report/:id" element={<Report />} />
         <Route path="/history" element={<History />} />
+        <Route path="/history/:id" element={<HistoryDetail />} />
       </Routes>
     </BrowserRouter>
   );
