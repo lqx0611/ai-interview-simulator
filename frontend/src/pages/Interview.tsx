@@ -1,3 +1,8 @@
+/**
+ * 面试对话页 — 核心页面
+ * 展示AI面试官和用户的对话，支持SSE流式输出（打字机效果）
+ * 用户输入回答后通过SSE接收AI的逐字回复，可随时结束面试
+ */
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Button, Input, Tag, Modal, message, Space } from 'antd';
@@ -39,13 +44,14 @@ const Interview = () => {
   const [questionCount, setQuestionCount] = useState(1);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
-  // Timer
+
+  /** 面试计时器：从页面加载开始每秒递增，面试结束后刷新页面即停止 */
   useEffect(() => {
     const timer = setInterval(() => setSeconds(s => s + 1), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  // Auto-scroll
+  /** 新消息到达时自动滚动到底部 */
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -56,14 +62,17 @@ const Interview = () => {
     return `${m}:${sec}`;
   };
 
+  /** 发送用户回答，通过SSE接收AI追问/回复 */
   const handleSend = () => {
     const content = inputValue.trim();
     if (!content || streaming) return;
 
+    // 添加用户消息到对话列表
     const userMsg: ChatMessage = { id: String(++msgId), role: 'candidate', content };
     setMessages(prev => [...prev, userMsg]);
     setInputValue('');
 
+    // 创建AI消息占位，流式回调中逐字填充
     const aiMsgId = String(++msgId);
     const aiMsg: ChatMessage = { id: aiMsgId, role: 'interviewer', content: '', streaming: true };
     setMessages(prev => [...prev, aiMsg]);
@@ -81,7 +90,7 @@ const Interview = () => {
           m.id === aiMsgId ? { ...m, streaming: false } : m
         ));
         setQuestionCount(q => q + 1);
-        // If AI suggests ending, auto-end
+        // AI建议结束面试时自动触发结束流程
         if (result.action === 'end') {
           handleEndInterview();
         }
@@ -95,6 +104,7 @@ const Interview = () => {
     );
   };
 
+  /** 调用后端结束面试API，跳转到报告页 */
   const handleEndInterview = async () => {
     if (ending) return;
     setEnding(true);

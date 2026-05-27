@@ -1,43 +1,43 @@
 server:
-  port: 8080
+  port: 8080  # 服务端口
 
 spring:
   application:
-    name: interview-simulator
+    name: interview-simulator  # 应用名称
 
   datasource:
-    url: jdbc:mysql://192.168.81.100:3306/ai_interview
-    username: root
-    password: root123
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://192.168.81.100:3306/ai_interview  # MySQL连接地址（数据库名：ai_interview）
+    username: root  # 数据库用户名
+    password: root123  # 数据库密码
+    driver-class-name: com.mysql.cj.jdbc.Driver  # MySQL JDBC驱动
 
   data:
     redis:
-      host: 192.168.81.100
-      port: 6379
-      database: 0
-      password: 888888
-      ttl: 3600
+      host: 192.168.81.100  # Redis服务器地址
+      port: 6379  # Redis端口
+      database: 0  # 使用的Redis数据库编号
+      password: 888888  # Redis密码
+      ttl: 3600  # 缓存默认过期时间（秒）
 
   ai:
     deepseek:
-      api-key: ${AI_API_KEY}
-      base-url: https://api.deepseek.com
+      api-key: ${AI_API_KEY}  # DeepSeek API密钥（从环境变量注入）
+      base-url: https://api.deepseek.com  # DeepSeek API地址
       chat:
         options:
-          model: deepseek-v4-flash
-          temperature: 0.7
+          model: deepseek-v4-flash  # 默认模型：DeepSeek V4 Flash（速度快）
+          temperature: 0.7  # 生成温度（0-1，越高回答越随机）
 
 mybatis-plus:
   configuration:
-    map-underscore-to-camel-case: true
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true  # 数据库下划线字段自动映射为Java驼峰属性
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl  # SQL日志输出到控制台（开发调试用）
   global-config:
     db-config:
-      logic-delete-field: deleted
-      logic-delete-value: 1
-      logic-not-delete-value: 0
+      logic-delete-field: deleted  # 逻辑删除字段名
+      logic-delete-value: 1  # 已删除标记值
+      logic-not-delete-value: 0  # 未删除标记值
 
 logging:
   level:
-    com.interview: debug
+    com.interview: debug  # 项目包日志级别（开发期间打印debug日志）

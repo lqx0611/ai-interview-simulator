@@ -1,3 +1,7 @@
+/**
+ * 首页
+ * 欢迎区 + 练习统计卡片 + 知识点掌握度列表（分页排序）+ 最近面试记录
+ */
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Tag, Button, Spin, Typography, Row, Col, Progress, Empty, Pagination, Select } from 'antd';
@@ -64,9 +68,11 @@ const Home = () => {
   const [topicPageSize, setTopicPageSize] = useState(5);
   const [topicSortOrder, setTopicSortOrder] = useState<'asc' | 'desc'>('asc');
 
+  /** 页面初始化：并行请求看板统计和最近3条面试记录 */
   useEffect(() => {
     const load = async () => {
       try {
+        // 两个请求互不依赖，使用Promise.all并行加载
         const [statsRes, historyRes] = await Promise.all([
           getDashboardStats(),
           getHistory(1, 3),

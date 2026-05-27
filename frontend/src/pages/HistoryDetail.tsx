@@ -1,3 +1,7 @@
+/**
+ * 历史详情页
+ * 展示单次面试的完整信息：基本信息、完整对话记录、面试报告（含知识点评分）
+ */
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button, Card, Divider, Empty, Progress, Space, Spin, Tag, Typography } from 'antd';
@@ -35,6 +39,7 @@ const formatDate = (dateStr: string) => {
   });
 };
 
+/** 根据分数返回对应颜色：>=8 绿, >=6 蓝, >=4 黄, <4 红 */
 const scoreColor = (score: number) => {
   if (score >= 8) return '#52c41a';
   if (score >= 6) return '#1677ff';
@@ -48,6 +53,7 @@ const HistoryDetail = () => {
   const [data, setData] = useState<InterviewDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
+  /** 根据URL参数中的面试ID加载详情数据 */
   useEffect(() => {
     if (!id) return;
     getInterviewDetail(Number(id))

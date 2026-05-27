@@ -1,3 +1,7 @@
+/**
+ * 练习历史页
+ * 分页展示历史面试记录列表，卡片式布局，支持分页和页大小切换
+ */
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Tag, Pagination, Select, Spin, Empty, Typography } from 'antd';
@@ -40,6 +44,7 @@ const History = () => {
   const [loading, setLoading] = useState(false);
   const [pageSize, setPageSize] = useState(5);
 
+  /** 请求分页历史数据 */
   const fetchData = async (p: number, ps: number) => {
     setLoading(true);
     try {
@@ -49,6 +54,8 @@ const History = () => {
       setLoading(false);
     }
   };
+
+  /** 页码或页大小变化时重新加载 */
 
   useEffect(() => {
     fetchData(page, pageSize);

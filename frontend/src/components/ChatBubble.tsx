@@ -1,3 +1,8 @@
+/**
+ * 对话气泡组件
+ * 面试官消息（蓝色机器人头像，灰色气泡，左侧）+ 候选人消息（蓝色用户头像，蓝色气泡，右侧）
+ * 支持流式输出时尾部闪烁光标效果
+ */
 import { useEffect } from 'react';
 import { Typography } from 'antd';
 import { RobotOutlined, UserOutlined } from '@ant-design/icons';
@@ -6,6 +11,7 @@ const { Text } = Typography;
 
 const blinkStyleId = 'chat-bubble-blink';
 
+/** 动态注入闪烁动画CSS（光标样式），只注入一次避免重复添加style标签 */
 function ensureBlinkStyle() {
   if (document.getElementById(blinkStyleId)) return;
   const style = document.createElement('style');
@@ -76,6 +82,7 @@ const ChatBubble = ({ role, content, streaming }: ChatBubbleProps) => {
         }}
       >
         <Text style={{ color: 'inherit' }}>{content}</Text>
+        {/* 流式输出中显示闪烁光标，模拟打字效果 */}
         {streaming && <span className="cursor-blink">|</span>}
       </div>
     </div>

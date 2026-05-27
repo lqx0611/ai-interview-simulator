@@ -15,6 +15,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 统计看板服务
+ * 聚合用户所有已完成面试的数据，计算知识点掌握度统计和薄弱项
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -23,6 +27,13 @@ public class DashboardService {
     private final InterviewMapper interviewMapper;
     private final TopicScoreMapper topicScoreMapper;
 
+    /**
+     * 获取用户的知识点掌握度统计
+     * 查询历史面试总数和总时长，按知识点聚合评分的平均/最高/最低及练习次数，
+     * 计算掌握度等级（精通/熟练/了解/薄弱），输出薄弱知识点列表
+     *
+     * @return 统计数据：总面试次数、总时长、各知识点统计、薄弱知识点列表
+     */
     public DashboardStatsResponse getStats() {
         Long userId = 1L;
 
@@ -42,6 +53,7 @@ public class DashboardService {
             BigDecimal minScore = toBigDecimal(row.get("min_score"), 1);
             int practiceCount = ((Number) row.getOrDefault("practice_count", 0)).intValue();
 
+            // 根据平均分划分掌握度等级
             String level = calcLevel(avgScore.doubleValue());
 
             LocalDateTime lastPracticeTime = null;
@@ -61,6 +73,7 @@ public class DashboardService {
         return new DashboardStatsResponse(totalInterviews, totalDuration, topicStats, weakTopics);
     }
 
+    /** 根据平均分划分掌握度等级：>=8 精通, >=6 熟练, >=4 了解, <4 薄弱 */
     private String calcLevel(double avg) {
         if (avg >= 8) return "proficient";
         if (avg >= 6) return "skilled";
@@ -68,6 +81,7 @@ public class DashboardService {
         return "weak";
     }
 
+    /** null安全的数值转BigDecimal，指定小数位数和四舍五入 */
     private BigDecimal toBigDecimal(Object val, int scale) {
         if (val == null) return BigDecimal.ZERO;
         return BigDecimal.valueOf(((Number) val).doubleValue())

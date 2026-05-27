@@ -1,3 +1,7 @@
+/**
+ * 面试设置页
+ * 用户在此选择面试方向、难度等级和面试类型，确认后调用API开始面试
+ */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Form, Radio, Button, Typography, Space, message } from 'antd';
@@ -28,10 +32,12 @@ const Setup = () => {
   const navigate = useNavigate();
   const [form] = Form.useForm();
 
+  /** 提交面试配置，调用API创建面试并跳转到对话页 */
   const handleStart = async (values: { direction: string; difficulty: string; interviewType: string }) => {
     setLoading(true);
     try {
       const result = await startInterview(values);
+      // 将开场白和方向信息通过路由state传递给面试页面
       navigate(`/interview/${result.interviewId}`, {
         state: { openingMessage: result.openingMessage, direction: values.direction },
       });

@@ -1,3 +1,7 @@
+/**
+ * 面试报告页
+ * 展示AI生成的面试评估报告：整体评分、对话统计、知识点评分、改进建议
+ */
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button, Card, Progress, Space, Tag, Typography, Divider, Empty } from 'antd';
 import {
@@ -14,6 +18,7 @@ const formatDuration = (s: number) => {
   return `${sec}秒`;
 };
 
+/** 根据分数返回对应颜色：>=8 绿, >=6 蓝, >=4 黄, <4 红 */
 const scoreColor = (score: number) => {
   if (score >= 8) return '#52c41a';
   if (score >= 6) return '#1677ff';
@@ -21,6 +26,7 @@ const scoreColor = (score: number) => {
   return '#ff4d4f';
 };
 
+/** 根据分数返回对应等级文字：>=9 优秀, >=7 良好, >=5 一般, <5 需要提升 */
 const scoreLevel = (score: number) => {
   if (score >= 9) return '优秀';
   if (score >= 7) return '良好';
