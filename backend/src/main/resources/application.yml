@@ -19,6 +19,15 @@ spring:
       password: 888888
       ttl: 3600
 
+  ai:
+    deepseek:
+      api-key: ${AI_API_KEY}
+      base-url: https://api.deepseek.com
+      chat:
+        options:
+          model: deepseek-v4-flash
+          temperature: 0.7
+
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
