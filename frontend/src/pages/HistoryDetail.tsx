@@ -2,7 +2,7 @@
  * 历史详情页
  * 展示单次面试的完整信息：基本信息、完整对话记录、面试报告（含知识点评分）
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button, Card, Divider, Empty, Progress, Space, Spin, Tag, Typography } from 'antd';
 import {
@@ -53,6 +53,10 @@ const HistoryDetail = () => {
   const [data, setData] = useState<InterviewDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // 评分动画：从0递增到目标分数
+  const [displayScore, setDisplayScore] = useState(0);
+  const animRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   /** 根据URL参数中的面试ID加载详情数据 */
   useEffect(() => {
     if (!id) return;
@@ -60,6 +64,24 @@ const HistoryDetail = () => {
       .then(setData)
       .finally(() => setLoading(false));
   }, [id]);
+
+  // 数据加载完成后启动评分动画
+  useEffect(() => {
+    if (!data?.report?.overallScore) return;
+    const target = data.report.overallScore;
+    let current = 0;
+    const step = Math.max(0.05, target / 50);
+    animRef.current = setInterval(() => {
+      current += step;
+      if (current >= target) {
+        setDisplayScore(target);
+        clearInterval(animRef.current!);
+      } else {
+        setDisplayScore(current);
+      }
+    }, 20);
+    return () => { if (animRef.current) clearInterval(animRef.current); };
+  }, [data?.report?.overallScore]);
 
   if (loading) {
     return (
@@ -128,13 +150,13 @@ const HistoryDetail = () => {
             <Title level={5} style={{ marginBottom: 16 }}>面试评分</Title>
             <Progress
               type="circle"
-              percent={data.report.overallScore * 10}
+              percent={Math.round(displayScore * 10)}
               size={140}
               strokeColor={scoreColor(data.report.overallScore)}
               format={() => (
                 <div>
                   <div style={{ fontSize: 36, fontWeight: 700, color: scoreColor(data.report.overallScore), lineHeight: 1 }}>
-                    {data.report.overallScore}
+                    {displayScore.toFixed(1)}
                   </div>
                   <div style={{ fontSize: 12, color: '#999' }}>/ 10</div>
                 </div>
@@ -180,8 +202,11 @@ const HistoryDetail = () => {
                       background: '#fff2f0', border: '1px solid #ffccc7', borderRadius: 8,
                       padding: '12px 16px', marginBottom: 12,
                     }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <Text strong style={{ color: '#ff4d4f' }}>{t.topic}</Text>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                        <Space>
+                          <Text strong style={{ color: '#ff4d4f' }}>{t.topic}</Text>
+                          <Tag color="error">薄弱</Tag>
+                        </Space>
                         <Text style={{ color: '#ff4d4f', fontWeight: 600 }}>{t.score}/10</Text>
                       </div>
                       <Progress percent={t.score * 10} strokeColor="#ff4d4f" showInfo={false} size="small" />
@@ -195,11 +220,25 @@ const HistoryDetail = () => {
             </Card>
           )}
 
-          {/* Improvement */}
+          {/* Improvement — 按薄弱点分组展示 */}
           {data.report.improvement && (
             <Card style={{ marginBottom: 24 }}>
               <Title level={5}><BulbOutlined style={{ color: '#faad14', marginRight: 6 }} />改进建议</Title>
-              <Paragraph style={{ whiteSpace: 'pre-wrap', color: '#555' }}>{data.report.improvement}</Paragraph>
+              {weakTopics.length > 0 && (
+                <div style={{ marginBottom: 16 }}>
+                  <Text type="secondary" style={{ display: 'block', marginBottom: 8 }}>
+                    以下建议针对你的薄弱环节：
+                  </Text>
+                  <Space wrap>
+                    {weakTopics.map(t => (
+                      <Tag key={t.topic} color="error">{t.topic}</Tag>
+                    ))}
+                  </Space>
+                </div>
+              )}
+              <Paragraph style={{ whiteSpace: 'pre-wrap', color: '#555', background: '#fafafa', padding: 16, borderRadius: 8 }}>
+                {data.report.improvement}
+              </Paragraph>
             </Card>
           )}
         </>

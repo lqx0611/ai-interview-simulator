@@ -89,6 +89,31 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- Spring Boot Security Starter：提供BCrypt密码加密和JWT认证框架 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+        <!-- JWT库：生成和验证JWT Token（jjwt 0.12+ 支持Java 21） -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>0.12.6</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>0.12.6</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>0.12.6</version>
+            <scope>runtime</scope>
+        </dependency>
+
         <!-- Spring Boot Test Starter：单元测试和集成测试支持 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

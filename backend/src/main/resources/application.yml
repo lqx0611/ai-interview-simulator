@@ -38,6 +38,12 @@ mybatis-plus:
       logic-delete-value: 1  # 已删除标记值
       logic-not-delete-value: 0  # 未删除标记值
 
+# 应用自定义配置
+app:
+  jwt:
+    secret: ${JWT_SECRET:ai-interview-simulator-default-secret-key-2026}  # JWT签名密钥（生产环境通过环境变量注入覆盖）
+    expiration-days: 7  # Token有效期（天）
+
 logging:
   level:
     com.interview: debug  # 项目包日志级别（开发期间打印debug日志）

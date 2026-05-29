@@ -1,0 +1,40 @@
+/**
+ * 全局响应式样式
+ * Step 4.5：移动端适配，确保对话页和核心页面在手机上可用
+ */
+
+/* 对话页移动端适配 */
+@media (max-width: 640px) {
+  /* ChatBubble 头像和气泡调整 */
+  .chat-area-bubble {
+    max-width: 85% !important;
+  }
+}
+
+/* 面试对话页全屏布局在小屏上调整 */
+@media (max-width: 480px) {
+  /* 顶栏紧凑化 */
+  .interview-topbar {
+    padding: 8px 12px !important;
+    gap: 6px;
+  }
+
+  /* 输入区域紧凑化 */
+  .interview-input-area {
+    padding: 8px 12px !important;
+    gap: 6px;
+  }
+
+  /* 聊天区域减小内边距 */
+  .interview-chat-area {
+    padding: 12px 10px !important;
+  }
+}
+
+/* 报告页/详情页移动端适配 */
+@media (max-width: 640px) {
+  .report-container,
+  .detail-container {
+    padding: 20px 12px !important;
+  }
+}

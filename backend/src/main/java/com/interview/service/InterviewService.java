@@ -3,6 +3,7 @@ package com.interview.service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.interview.common.SecurityUtils;
 import com.interview.dto.EndInterviewResponse;
 import com.interview.dto.HistoryItemResponse;
 import com.interview.dto.InterviewDetailResponse;
@@ -42,7 +43,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class InterviewService {
 
+    /** Spring AI聊天客户端构建器，用于与AI模型进行对话交互 */
     private final ChatClient.Builder chatClientBuilder;
+
     private final InterviewMapper interviewMapper;
     private final MessageMapper messageMapper;
     private final InterviewReportMapper interviewReportMapper;
@@ -79,7 +82,7 @@ public class InterviewService {
 
         // 创建面试记录，状态设为进行中
         Interview interview = new Interview();
-        interview.setUserId(1L);
+        interview.setUserId(SecurityUtils.getCurrentUserId());
         interview.setDirection(request.getDirection());
         interview.setDifficulty(request.getDifficulty());
         interview.setInterviewType(request.getInterviewType());
@@ -525,7 +528,7 @@ public class InterviewService {
     public PageResponse<HistoryItemResponse> getHistory(int page, int size) {
         Page<Interview> pageParam = new Page<>(page, size);
         QueryWrapper<Interview> wrapper = new QueryWrapper<Interview>()
-                .eq("user_id", 1L)
+                .eq("user_id", SecurityUtils.getCurrentUserId())
                 .eq("status", "completed")
                 .orderByDesc("create_time");
 

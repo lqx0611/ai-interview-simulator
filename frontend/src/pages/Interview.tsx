@@ -2,13 +2,17 @@
  * 面试对话页 — 核心页面
  * 展示AI面试官和用户的对话，支持SSE流式输出（打字机效果）
  * 用户输入回答后通过SSE接收AI的逐字回复，可随时结束面试
+ *
+ * 页面刷新安全：挂载时自动从后端拉取面试详情，还原对话记录和计时器
+ * 不依赖 location.state（刷新后丢失），完全基于URL中的interview id恢复状态
  */
-import { useEffect, useRef, useState } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { Button, Input, Tag, Modal, message, Space } from 'antd';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Button, Input, Tag, Modal, message, Space, Spin } from 'antd';
 import ChatBubble from '../components/ChatBubble';
+import UserMenu from '../components/UserMenu';
 import { useSSE } from '../hooks/useSSE';
-import { endInterview } from '../api/interview';
+import { endInterview, getInterviewDetail } from '../api/interview';
 
 const DIR_LABELS: Record<string, string> = {
   java_backend: 'Java后端', ai_dev: 'AI开发', fullstack: '全栈开发',
@@ -25,27 +29,76 @@ let msgId = 0;
 
 const Interview = () => {
   const { id } = useParams<{ id: string }>();
-  const location = useLocation();
   const navigate = useNavigate();
   const { streaming, sendMessage } = useSSE();
 
-  const state = location.state as { openingMessage?: string; direction?: string } | null;
-  const direction = state?.direction || 'java_backend';
+  // ── 页面恢复相关状态 ──
+  const [loading, setLoading] = useState(true);
+  const [direction, setDirection] = useState<string>('java_backend');
 
-  const [messages, setMessages] = useState<ChatMessage[]>(() => {
-    if (state?.openingMessage) {
-      return [{ id: String(++msgId), role: 'interviewer', content: state.openingMessage }];
-    }
-    return [];
-  });
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [ending, setEnding] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [questionCount, setQuestionCount] = useState(1);
+  /** 面试开始时间（ISO字符串），用于页面刷新后恢复计时器 */
+  const createTimeRef = useRef<string | null>(null);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  /** 面试计时器：从页面加载开始每秒递增，面试结束后刷新页面即停止 */
+  /**
+   * 挂载时从后端加载面试详情，还原对话记录和面试状态
+   * 这样即使页面刷新，也能从后端恢复完整的对话历史
+   */
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const detail = await getInterviewDetail(Number(id));
+
+        // 面试已完成，直接跳转报告页
+        if (detail.totalScore != null) {
+          navigate(`/report/${id}`, { replace: true });
+          return;
+        }
+
+        if (cancelled) return;
+
+        // 还原面试方向
+        setDirection(detail.direction);
+
+        // 还原提问计数
+        setQuestionCount(detail.questionCount);
+
+        // 恢复对话消息（含AI和用户的完整历史）
+        if (detail.messages && detail.messages.length > 0) {
+          const restored: ChatMessage[] = detail.messages.map(m => ({
+            id: String(++msgId),
+            role: m.role as 'interviewer' | 'candidate',
+            content: m.content,
+            streaming: false,
+          }));
+          setMessages(restored);
+        }
+
+        // 根据面试创建时间计算已流失秒数，继续计时
+        if (detail.createTime) {
+          createTimeRef.current = detail.createTime;
+          const elapsed = Math.floor((Date.now() - new Date(detail.createTime).getTime()) / 1000);
+          setSeconds(Math.max(0, elapsed));
+        }
+      } catch {
+        message.error('加载面试数据失败');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [id, navigate]);
+
+  /** 面试计时器：从面试开始时间持续递增（页面刷新后从已流失时间接续） */
   useEffect(() => {
     const timer = setInterval(() => setSeconds(s => s + 1), 1000);
     return () => clearInterval(timer);
@@ -63,7 +116,7 @@ const Interview = () => {
   };
 
   /** 发送用户回答，通过SSE接收AI追问/回复 */
-  const handleSend = () => {
+  const handleSend = useCallback(() => {
     const content = inputValue.trim();
     if (!content || streaming) return;
 
@@ -102,7 +155,7 @@ const Interview = () => {
         message.error(err);
       }
     );
-  };
+  }, [inputValue, streaming, id, sendMessage]);
 
   /** 调用后端结束面试API，跳转到报告页 */
   const handleEndInterview = async () => {
@@ -128,15 +181,25 @@ const Interview = () => {
     });
   };
 
+  // 加载中显示Spin，等待后端数据恢复
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <Spin size="large" tip="加载面试数据..." />
+      </div>
+    );
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', maxWidth: 800, margin: '0 auto' }}>
       {/* Top bar */}
-      <div style={{
+      <div className="interview-topbar" style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         padding: '12px 20px', borderBottom: '1px solid #f0f0f0', background: '#fff',
-        flexShrink: 0,
+        flexShrink: 0, flexWrap: 'wrap', gap: 6,
       }}>
         <Space>
+          <UserMenu />
           <Tag color="blue">{DIR_LABELS[direction] || direction}</Tag>
           <span style={{ color: '#999' }}>提问 {questionCount} 次</span>
         </Space>
@@ -147,7 +210,7 @@ const Interview = () => {
       </div>
 
       {/* Chat area */}
-      <div style={{
+      <div className="interview-chat-area" style={{
         flex: 1, overflowY: 'auto', padding: '20px 16px',
         background: '#fafafa',
       }}>
@@ -158,7 +221,7 @@ const Interview = () => {
       </div>
 
       {/* Input area */}
-      <div style={{
+      <div className="interview-input-area" style={{
         padding: '12px 16px', borderTop: '1px solid #f0f0f0', background: '#fff',
         display: 'flex', gap: 10, alignItems: 'flex-end', flexShrink: 0,
       }}>
@@ -171,8 +234,10 @@ const Interview = () => {
               handleSend();
             }
           }}
-          placeholder="输入你的回答... (Enter 发送, Shift+Enter 换行)"
+          placeholder="输入你的回答... (Enter 发送, Shift+Enter 换行, 最多2000字)"
           rows={3}
+          maxLength={2000}
+          showCount
           disabled={streaming}
           style={{ flex: 1 }}
         />

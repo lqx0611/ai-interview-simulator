@@ -1,7 +1,10 @@
 /**
  * 面试报告页
- * 展示AI生成的面试评估报告：整体评分、对话统计、知识点评分、改进建议
+ * 展示AI生成的面试评估报告：整体评分（入场动画）、对话统计、知识点评分、改进建议
+ *
+ * Step 4.5 优化：评分数字从0动画跳变 / 薄弱点红色Tag / 改进建议按薄弱点分组
  */
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button, Card, Progress, Space, Tag, Typography, Divider, Empty } from 'antd';
 import {
@@ -34,11 +37,43 @@ const scoreLevel = (score: number) => {
   return '需要提升';
 };
 
+/**
+ * 评分数字动画 Hook
+ * 从0逐渐递增到目标分数，约1秒完成
+ */
+function useCountUp(target: number, enabled: boolean) {
+  const [value, setValue] = useState(0);
+
+  useEffect(() => {
+    if (!enabled) return;
+    let current = 0;
+    const step = Math.max(0.05, target / 50);
+    const timer = setInterval(() => {
+      current += step;
+      if (current >= target) {
+        setValue(target);
+        clearInterval(timer);
+      } else {
+        setValue(current);
+      }
+    }, 20);
+    return () => clearInterval(timer);
+  }, [target, enabled]);
+
+  return enabled ? value : target;
+}
+
 const Report = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
   const report = location.state?.report as import('../api/interview').EndInterviewResult | null;
+
+  // 评分入场动画控制
+  const [animate, setAnimate] = useState(false);
+  useEffect(() => { setAnimate(true); }, []);
+
+  const displayScore = useCountUp(report?.overallScore ?? 0, animate);
 
   if (!report) {
     return (
@@ -61,13 +96,13 @@ const Report = () => {
         <div style={{ position: 'relative', display: 'inline-block' }}>
           <Progress
             type="circle"
-            percent={report.overallScore * 10}
+            percent={Math.round(displayScore * 10)}
             size={180}
             strokeColor={scoreColor(report.overallScore)}
             format={() => (
               <div>
                 <div style={{ fontSize: 48, fontWeight: 700, color: scoreColor(report.overallScore), lineHeight: 1 }}>
-                  {report.overallScore}
+                  {displayScore.toFixed(1)}
                 </div>
                 <div style={{ fontSize: 14, color: '#999' }}>/ 10</div>
               </div>
@@ -151,8 +186,11 @@ const Report = () => {
                 background: '#fff2f0', border: '1px solid #ffccc7', borderRadius: 8,
                 padding: '12px 16px', marginBottom: 12,
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <Text strong style={{ color: '#ff4d4f' }}>{t.topic}</Text>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                  <Space>
+                    <Text strong style={{ color: '#ff4d4f' }}>{t.topic}</Text>
+                    <Tag color="error">薄弱</Tag>
+                  </Space>
                   <Text style={{ color: '#ff4d4f', fontWeight: 600 }}>{t.score}/10</Text>
                 </div>
                 <Progress
@@ -172,14 +210,30 @@ const Report = () => {
         )}
       </Card>
 
-      {/* Improvement */}
+      {/* Improvement — 按薄弱点分组展示改进建议 */}
       {report.improvement && (
         <Card style={{ marginBottom: 24 }}>
           <Title level={5}>
             <BulbOutlined style={{ color: '#faad14', marginRight: 6 }} />
             改进建议
           </Title>
-          <Paragraph style={{ whiteSpace: 'pre-wrap', color: '#555' }}>{report.improvement}</Paragraph>
+          {/* 薄弱点标签汇总 */}
+          {weakTopics.length > 0 && (
+            <div style={{ marginBottom: 16 }}>
+              <Text type="secondary" style={{ display: 'block', marginBottom: 8 }}>
+                以下建议针对你的薄弱环节：
+              </Text>
+              <Space wrap>
+                {weakTopics.map(t => (
+                  <Tag key={t.topic} color="error">{t.topic}</Tag>
+                ))}
+              </Space>
+            </div>
+          )}
+          {/* 改进建议全文 */}
+          <Paragraph style={{ whiteSpace: 'pre-wrap', color: '#555', background: '#fafafa', padding: 16, borderRadius: 8 }}>
+            {report.improvement}
+          </Paragraph>
         </Card>
       )}
 

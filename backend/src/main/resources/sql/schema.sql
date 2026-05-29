@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS `interview` (
   `direction` VARCHAR(20) NOT NULL COMMENT '面试方向：java_backend/ai_dev/fullstack',
   `difficulty` VARCHAR(10) NOT NULL COMMENT '难度：junior/mid/senior',
   `interview_type` VARCHAR(20) NOT NULL COMMENT '类型：knowledge/project/comprehensive',
-  `status` VARCHAR(10) NOT NULL COMMENT '状态：in_progress/completed',
+  `status` VARCHAR(20) NOT NULL COMMENT '状态：in_progress/completed',
   `total_score` DECIMAL(3,1) COMMENT '总评分',
   `duration_seconds` INT DEFAULT 0 COMMENT '面试时长(秒)',
   `question_count` INT DEFAULT 0 COMMENT '提问数',
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS `interview` (
 CREATE TABLE IF NOT EXISTS `message` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `interview_id` BIGINT NOT NULL,
-  `role` VARCHAR(10) NOT NULL COMMENT '角色：interviewer/candidate',
+  `role` VARCHAR(20) NOT NULL COMMENT '角色：interviewer/candidate',
   `content` TEXT NOT NULL COMMENT '消息内容',
   `topic` VARCHAR(50) COMMENT '当前考察的知识点',
   `score` DECIMAL(3,1) COMMENT '该回答评分(1-10)',

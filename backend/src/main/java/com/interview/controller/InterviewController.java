@@ -1,5 +1,6 @@
 package com.interview.controller;
 
+import com.interview.common.RateLimit;
 import com.interview.common.Result;
 import com.interview.dto.*;
 import com.interview.service.InterviewService;
@@ -40,6 +41,7 @@ public class InterviewController {
      * @param request 用户回答内容
      * @return SseEmitter实例，AI回复通过SSE逐字推送到前端
      */
+    @RateLimit(maxCalls = 5, windowSeconds = 60, message = "回答过于频繁，请每分钟不超过5次")
     @PostMapping(value = "/api/interview/{id}/answer", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter answer(@PathVariable Long id, @Valid @RequestBody AnswerRequest request) {
         // 超时时间设为5分钟，避免长对话中SSE连接断开

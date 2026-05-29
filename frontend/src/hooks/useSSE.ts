@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
+import { getToken } from '../api/request';
 
 /** SSE事件解析结果 */
 interface SSEResult {
@@ -42,9 +43,19 @@ export function useSSE() {
 
     try {
       // 发起POST请求，Accept设为text/event-stream标识期待SSE响应
+      // 构建请求头（fetch不走Axios拦截器，需手动携带Token）
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'Accept': 'text/event-stream',
+      };
+      const token = getToken();
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const response = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
+        headers,
         body: JSON.stringify(body),
         signal: controller.signal,
       });
@@ -65,11 +76,12 @@ export function useSSE() {
 
       const decoder = new TextDecoder();
       let buffer = '';
+      let streamFinished = false; // done事件标记，避免reader.read()因代理缓冲永远不返回done
 
       // 循环读取chunk，按行解析SSE的"data:"前缀事件
       while (true) {
         const { done, value } = await reader.read();
-        if (done) {
+        if (done || streamFinished) {
           console.log('[SSE] Stream done, remaining buffer:', buffer);
           break;
         }
@@ -100,6 +112,9 @@ export function useSSE() {
                 action: (data.action as string) || 'next',
                 finalContent: (data.final_content as string) || '',
               });
+              // 标记流已完成并取消reader，避免代理层缓冲导致reader.read()永远不返回done
+              streamFinished = true;
+              reader.cancel().catch(() => {});
             } else if (data.type === 'error') {
               onError((data.message as string) || '未知错误');
             }

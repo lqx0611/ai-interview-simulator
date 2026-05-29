@@ -1,5 +1,6 @@
 package com.interview.service;
 
+import com.interview.common.SecurityUtils;
 import com.interview.dto.DashboardStatsResponse;
 import com.interview.mapper.InterviewMapper;
 import com.interview.mapper.TopicScoreMapper;
@@ -35,7 +36,7 @@ public class DashboardService {
      * @return 统计数据：总面试次数、总时长、各知识点统计、薄弱知识点列表
      */
     public DashboardStatsResponse getStats() {
-        Long userId = 1L;
+        Long userId = SecurityUtils.getCurrentUserId();
 
         Map<String, Object> stats = interviewMapper.selectStatsByUserId(userId);
         int totalInterviews = ((Number) stats.getOrDefault("total", 0)).intValue();
