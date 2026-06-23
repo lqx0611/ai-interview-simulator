@@ -1,5 +1,7 @@
 package com.interview.common;
 
+import org.springframework.data.redis.RedisConnectionFailureException;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -33,6 +35,14 @@ public class GlobalExceptionHandler {
     public Result<Void> handleIllegalArgument(IllegalArgumentException e) {
         log.warn("Bad request: {}", e.getMessage());
         return Result.error(400, e.getMessage());
+    }
+
+    /** 处理Redis连接异常：优雅降级而非500（避免阻断正常业务流程） */
+    @ExceptionHandler(RedisConnectionFailureException.class)
+    @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
+    public Result<Void> handleRedisDown(RedisConnectionFailureException e) {
+        log.error("Redis unavailable: {}", e.getMessage());
+        return Result.error(503, "服务暂时不可用，请稍后重试");
     }
 
     /** 兜底异常处理：捕获所有未处理的运行时异常，返回500内部错误 */

@@ -99,8 +99,9 @@ const HistoryDetail = () => {
     );
   }
 
-  const weakTopics = data.report?.topicScores.filter(t => t.isWeak) ?? [];
-  const strongTopics = data.report?.topicScores.filter(t => !t.isWeak) ?? [];
+  const report = data.report;
+  const weakTopics = report?.topicScores.filter(t => t.isWeak) ?? [];
+  const strongTopics = report?.topicScores.filter(t => !t.isWeak) ?? [];
 
   return (
     <div style={{ maxWidth: 800, margin: '0 auto', padding: '32px 20px' }}>
@@ -144,7 +145,7 @@ const HistoryDetail = () => {
       </Card>
 
       {/* Report */}
-      {data.report ? (
+      {report ? (
         <>
           <Card style={{ marginBottom: 24, textAlign: 'center' }}>
             <Title level={5} style={{ marginBottom: 16 }}>面试评分</Title>
@@ -152,10 +153,10 @@ const HistoryDetail = () => {
               type="circle"
               percent={Math.round(displayScore * 10)}
               size={140}
-              strokeColor={scoreColor(data.report.overallScore)}
+              strokeColor={scoreColor(report.overallScore)}
               format={() => (
                 <div>
-                  <div style={{ fontSize: 36, fontWeight: 700, color: scoreColor(data.report.overallScore), lineHeight: 1 }}>
+                  <div style={{ fontSize: 36, fontWeight: 700, color: scoreColor(report.overallScore), lineHeight: 1 }}>
                     {displayScore.toFixed(1)}
                   </div>
                   <div style={{ fontSize: 12, color: '#999' }}>/ 10</div>
@@ -163,12 +164,12 @@ const HistoryDetail = () => {
               )}
             />
             <Paragraph style={{ marginTop: 16, whiteSpace: 'pre-wrap', color: '#555', textAlign: 'left' }}>
-              {data.report.summary}
+              {report.summary}
             </Paragraph>
           </Card>
 
           {/* Topic Scores */}
-          {data.report.topicScores.length > 0 && (
+          {report.topicScores.length > 0 && (
             <Card title={
               <span>
                 知识点评分
@@ -221,7 +222,7 @@ const HistoryDetail = () => {
           )}
 
           {/* Improvement — 按薄弱点分组展示 */}
-          {data.report.improvement && (
+          {report.improvement && (
             <Card style={{ marginBottom: 24 }}>
               <Title level={5}><BulbOutlined style={{ color: '#faad14', marginRight: 6 }} />改进建议</Title>
               {weakTopics.length > 0 && (
@@ -237,7 +238,7 @@ const HistoryDetail = () => {
                 </div>
               )}
               <Paragraph style={{ whiteSpace: 'pre-wrap', color: '#555', background: '#fafafa', padding: 16, borderRadius: 8 }}>
-                {data.report.improvement}
+                {report.improvement}
               </Paragraph>
             </Card>
           )}

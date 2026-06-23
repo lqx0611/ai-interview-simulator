@@ -52,17 +52,24 @@ public class RateLimitInterceptor implements HandlerInterceptor {
         }
 
         String key = "rate_limit:" + userId + ":" + request.getRequestURI();
-        Long count = redisTemplate.opsForValue().increment(key);
 
-        // 首次请求设置过期时间
-        if (count != null && count == 1) {
-            redisTemplate.expire(key, limit.windowSeconds(), TimeUnit.SECONDS);
-        }
+        try {
+            Long count = redisTemplate.opsForValue().increment(key);
 
-        if (count != null && count > limit.maxCalls()) {
-            log.warn("Rate limit exceeded: userId={}, uri={}, count={}", userId, request.getRequestURI(), count);
-            write429(response, limit.message());
-            return false;
+            // 首次请求设置过期时间
+            if (count != null && count == 1) {
+                redisTemplate.expire(key, limit.windowSeconds(), TimeUnit.SECONDS);
+            }
+
+            if (count != null && count > limit.maxCalls()) {
+                log.warn("Rate limit exceeded: userId={}, uri={}, count={}", userId, request.getRequestURI(), count);
+                write429(response, limit.message());
+                return false;
+            }
+        } catch (Exception e) {
+            // Redis 不可用时优雅降级：放行请求，由业务层兜底
+            // 限流是辅助功能，不能因为 Redis 故障导致整个服务不可用
+            log.error("Redis unavailable, rate limit bypassed: userId={}, uri={}", userId, request.getRequestURI(), e);
         }
 
         return true;
